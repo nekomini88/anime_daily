@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本动漫番剧日报｜{{ report.date }}</title>
+    <style>
+        :root {
+            --bg: #f7f9fc;
+            --ink: #1f2328;
+            --muted: #5a6573;
+            --primary: #6c5ce7;
+            --primary-2: #a29bfe;
+            --accent: #fd79a8;
+            --warn: #fdcb6e;
+            --danger: #d63031;
+            --ok: #00b894;
+            --card: #ffffff;
+            --border: #eef1f6;
+            --shadow: 0 10px 25px rgba(20, 25, 40, 0.08);
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            font-family: "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.6;
+            padding: 24px;
+        }
+        .wrap { max-width: 1120px; margin: 0 auto; }
+        .hero {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            border-radius: 18px;
+            padding: 28px 32px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        .hero h1 { margin: 0 0 6px; font-size: 26px; }
+        .hero p { margin: 0; opacity: .9; }
+        .grid { display: grid; gap: 18px; }
+        .col-2 { grid-template-columns: repeat(2, 1fr); }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        .card h2, .card h3 {
+            margin: 4px 0 12px;
+            font-size: 17px;
+            color: var(--primary);
+        }
+        .card h2 { border-left: 4px solid var(--accent); padding-left: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+        th { background: #f4f3ff; color: #3a3454; font-weight: 600; }
+        tr:nth-child(even) td { background: #fbfbff; }
+        .rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #ede9fe; color: #6c5ce7; font-weight: 700; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .badge-up { background: #e6fffa; color: #006655; }
+        .badge-down { background: #fff0f0; color: #6b1a1a; }
+        .badge-flat { background: #f1f5f9; color: #475569; }
+        .stars { color: #fdcb6e; font-weight: 800; }
+        .section { margin-top: 10px; }
+        .meta { color: var(--muted); font-size: 13px; }
+        .recommend { background: linear-gradient(135deg,#fff0f6,#f3f0ff); border-left: 4px solid var(--accent); padding: 14px; border-radius: 10px; }
+        .quote { background: #fff9db; border-left: 4px solid var(--warn); padding: 14px; border-radius: 10px; }
+        .footer { margin-top: 22px; color: var(--muted); font-size: 12px; text-align: center; }
+        a { color: var(--primary); text-decoration: none; }
+        @media (max-width: 860px) { .col-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="hero">
+        <h1>📺 日本动漫番剧日报｜{{ report.date }}</h1>
+        <p>专业、简洁、高信息密度 · 每日 10 分钟掌握动漫圈核心动态</p>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>📰 今日动漫圈重要新闻</h2>
+            {% for item in report.news %}
+            <div style="margin-bottom:18px">
+                <div style="font-weight:700;font-size:15px">{{ item.title }}</div>
+                <div class="meta">标签：{{ item.tags|join('、') }}</div>
+                <div>{{ item.content }}</div>
+                <div class="meta">影响分析：{{ item.impact }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card">
+            <h2>🔥 本季新番热度排行榜 TOP10</h2>
+            <table>
+                <thead>
+                    <tr><th>排名</th><th>动画</th><th>类型</th><th>热度</th></tr>
+                </thead>
+                <tbody>
+                {% for row in report.ranking %}
+                <tr>
+                    <td><span class="rank">{{ row.rank }}</span></td>
+                    <td><b>{{ row.title }}</b><div class="meta">{{ row.recommend }}</div></td>
+                    <td>{{ row.genre }}</td>
+                    <td>
+                        {% if row.trend == 'up' %}<span class="badge badge-up">↑ {{ row.score }}</span>
+                        {% elif row.trend == 'down' %}<span class="badge badge-down">↓ {{ row.score }}</span>
+                        {% else %}<span class="badge badge-flat">- {{ row.score }}</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>🎯 今日值得追的番剧</h2>
+            {% for item in report.pick %}
+            <div class="recommend" style="margin-bottom:14px">
+                <div style="font-weight:700;font-size:15px">{{ item.title }}</div>
+                <div class="meta">{{ item.status }} · 推荐指数 {{ item.stars }}</div>
+                <div>{{ item.highlight }}</div>
+                <div class="meta">适合人群：{{ item.audience }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card">
+            <h2>🌱 本周口碑黑马</h2>
+            {% for item in report.hit %}
+            <div style="margin-bottom:14px">
+                <div style="font-weight:700">{{ item.title }} <span class="badge badge-up">逆袭中</span></div>
+                <div class="meta">评分变化：{{ item.score_change }}</div>
+                <div>{{ item.reason }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card">
+            <h2>🏢 动画制作公司动态</h2>
+            <table>
+                <thead>
+                    <tr><th>公司</th><th>动态类型</th><th>内容</th></tr>
+                </thead>
+                <tbody>
+                {% for row in report.company %}
+                <tr>
+                    <td>{{ row.company }}</td>
+                    <td>{{ row.type }}</td>
+                    <td>{{ row.content }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>📦 销量与商业数据</h2>
+            {% if report.sales %}
+            <table>
+                <thead>
+                    <tr><th>类别</th><th>内容</th><th>趋势</th></tr>
+                </thead>
+                <tbody>
+                {% for row in report.sales %}
+                <tr>
+                    <td>{{ row.category }}</td>
+                    <td>{{ row.content }}</td>
+                    <td>
+                        {% if row.trend == 'up' %}<span class="badge badge-up">上升</span>
+                        {% elif row.trend == 'down' %}<span class="badge badge-down">下降</span>
+                        {% else %}<span class="badge badge-flat">持平</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="meta">暂无可用数据</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>📅 未来 30 天值得期待的新番</h2>
+            {% for item in report.upcoming %}
+            <div style="margin-bottom:14px">
+                <div style="font-weight:700">{{ item.title }}</div>
+                <div class="meta">{{ item.date }} · {{ item.studio }} · 原作：{{ item.source }}</div>
+                <div>{{ item.expectation }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card">
+            <h2>✨ 今日编辑推荐</h2>
+            <div class="recommend">
+                <div style="font-weight:700;font-size:15px">{{ report.editor.title }}</div>
+                <div class="meta">{{ report.editor.audience }} · 类似作品：{{ report.editor.similar }}</div>
+                <div>{{ report.editor.reason }}</div>
+            </div>
+
+            <h3 style="margin-top:22px">💬 今日动漫金句</h3>
+            <div class="quote">
+                <div class="meta">{{ report.quote.source }} · {{ report.quote.character }}</div>
+                <div style="font-style:italic; margin:6px 0 10px">“{{ report.quote.line }}”</div>
+                <div>{{ report.quote.meaning }}</div>
+            </div>
+
+            <h3 style="margin-top:22px">🎬 今日追番清单</h3>
+            {% for level, items in report.shortlist.items() %}
+            {% set labels = {'5':'★★★★★ 必追','4':'★★★★ 推荐','3':'★★★ 有空可看','2':'★★ 可观望','1':'★ 不推荐'} %}
+            {% for title in items %}
+            <div class="meta">{{ labels[level] }} —— {{ title }}</div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+
+        <div class="footer">
+            <p>📊 Data Source：Nekomini Anime Daily | 📧 Created by：Nekomini Bot | 📅 {{ generated_at }}（北京时间UTC+8）</p>
+            <p>                                               power by  Nekomini</p>
+        </div>
+    </div>
+</body>
+</html>

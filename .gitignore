@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# 隐私/发送链路
+config.ini
+
+# 生成产物
+files/
+
+__pycache__/
+*.pyc
+cron.log
+files/
