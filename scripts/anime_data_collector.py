@@ -145,14 +145,20 @@ def build_report(date_str=None):
     seasonal = fetch_seasonal_now(limit=15)
     top = fetch_top_anime(limit=20)
     source = seasonal if seasonal else top
-    source = source[:10] if source else []
+    # Dedupe by mal_id while preserving order
+    seen = set()
+    deduped = []
+    for a in source:
+        mid = a.get("mal_id")
+        if mid and mid not in seen:
+            seen.add(mid)
+            deduped.append(a)
+    source = deduped[:10]
 
     mal_ids = [a.get("mal_id") for a in source if a.get("mal_id")]
-    try:
-        zh_map = _anilist_zh_candidates(mal_ids)
-        _zh_cache.update(zh_map)
-    except Exception as e:
-        print(f"⚠️ 中文标题增强失败：{e}", file=sys.stderr)
+    # Disable anilist cache injection; choose_title + title_overrides.json already resolve titles.
+    # zh_map = _anilist_zh_candidates(mal_ids)
+    # _zh_cache.update(zh_map)
 
     genres_map = {}
     ranking = []
