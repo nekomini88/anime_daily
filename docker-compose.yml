@@ -1,0 +1,10 @@
+services:
+  caddy:
+    image: caddy:alpine
+    container_name: anime_daily
+    restart: unless-stopped
+    ports:
+      - "9004:80"
+    volumes:
+      - ./index:/srv
+      - ./Caddyfile:/etc/caddy/Caddyfile
