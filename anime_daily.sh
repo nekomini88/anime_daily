@@ -34,6 +34,11 @@ fi
 
 echo "✅ HTML 报告已生成: $html_file"
 
+# 同步到部署目录 /index/index.html
+mkdir -p index
+cp -f "$html_file" "index/index.html"
+echo "✅ 已同步到 index/index.html"
+
 # Step 3: 发送邮件
 echo "📧 发送邮件..."
 python3 send_report_email.py "$html_file" "日本动漫番剧日报 $today" --html
