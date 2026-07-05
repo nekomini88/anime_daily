@@ -6,70 +6,137 @@
     <title>日本动漫番剧日报｜{{ report.date }}</title>
     <style>
         :root {
-            --bg: #f7f9fc;
-            --ink: #1f2328;
-            --muted: #5a6573;
-            --primary: #6c5ce7;
-            --primary-2: #a29bfe;
-            --accent: #fd79a8;
-            --warn: #fdcb6e;
-            --danger: #d63031;
-            --ok: #00b894;
-            --card: #ffffff;
-            --border: #eef1f6;
-            --shadow: 0 10px 25px rgba(20, 25, 40, 0.08);
+            --bg-page: #f0ece1;
+            --bg-card: rgba(247, 243, 233, 0.92);
+            --border-card: rgba(0, 0, 0, 0.08);
+            --shadow-card: 0 14px 34px rgba(0, 0, 0, 0.08);
+            --text-main: #1a1a1a;
+            --text-muted: #5c5c5c;
+            --accent: #2d6a4f;
+            --accent-2: #3a7d5e;
+            --danger: #c0392b;
+            --warn: #b8860b;
+            --info: #2471a3;
         }
+
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
+
         body {
-            font-family: "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-            line-height: 1.6;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans SC", sans-serif;
+            background: linear-gradient(180deg, #f7f3e9 0%, #f0ece1 100%);
+            color: var(--text-main);
+            line-height: 1.7;
             padding: 24px;
         }
+
         .wrap { max-width: 1120px; margin: 0 auto; }
+
         .hero {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: linear-gradient(135deg, #2d6a4f, #3a7d5e);
             color: #fff;
             border-radius: 18px;
             padding: 28px 32px;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-card);
             margin-bottom: 24px;
         }
-        .hero h1 { margin: 0 0 6px; font-size: 26px; }
-        .hero p { margin: 0; opacity: .9; }
+
+        .hero h1 {
+            margin: 0 0 6px;
+            font-size: 26px;
+            color: #fff;
+        }
+
+        .hero p {
+            margin: 0;
+            opacity: .92;
+            color: #f3f9f6;
+        }
+
         .grid { display: grid; gap: 18px; }
         .col-2 { grid-template-columns: repeat(2, 1fr); }
+
         .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
             padding: 20px;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-card);
         }
+
         .card h2, .card h3 {
             margin: 4px 0 12px;
             font-size: 17px;
-            color: var(--primary);
+            color: #1a1a1a;
+            font-weight: 900;
         }
+
         .card h2 { border-left: 4px solid var(--accent); padding-left: 10px; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
-        th { background: #f4f3ff; color: #3a3454; font-weight: 600; }
-        tr:nth-child(even) td { background: #fbfbff; }
-        .rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #ede9fe; color: #6c5ce7; font-weight: 700; }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-        .badge-up { background: #e6fffa; color: #006655; }
-        .badge-down { background: #fff0f0; color: #6b1a1a; }
-        .badge-flat { background: #f1f5f9; color: #475569; }
-        .stars { color: #fdcb6e; font-weight: 800; }
+
+        th, td {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(247, 243, 233, 0.95);
+            color: #1a1a1a;
+            font-weight: 800;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+        }
+
+        tbody tr:nth-child(odd) { background: transparent; }
+        tbody tr:nth-child(even) { background: rgba(0, 0, 0, 0.035); }
+        tbody tr:hover { background: rgba(45, 106, 79, 0.08); }
+
+        .rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(45, 106, 79, 0.1);
+            color: #1f5c3f;
+            font-weight: 800;
+        }
+
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+        .badge-up { background: #e6f4ec; color: #14532d; }
+        .badge-down { background: #fdf0f0; color: #6b1a1a; }
+        .badge-flat { background: #f4f4f4; color: #3f3f46; }
+
+        .stars { color: #b8860b; font-weight: 800; }
+
         .section { margin-top: 10px; }
-        .meta { color: var(--muted); font-size: 13px; }
-        .recommend { background: linear-gradient(135deg,#fff0f6,#f3f0ff); border-left: 4px solid var(--accent); padding: 14px; border-radius: 10px; }
-        .quote { background: #fff9db; border-left: 4px solid var(--warn); padding: 14px; border-radius: 10px; }
-        .footer { margin-top: 22px; color: var(--muted); font-size: 12px; text-align: center; }
-        a { color: var(--primary); text-decoration: none; }
+        .meta { color: var(--text-muted); font-size: 13px; }
+
+        .recommend {
+            background: rgba(45, 106, 79, 0.08);
+            border-left: 4px solid var(--accent);
+            padding: 14px;
+            border-radius: 10px;
+        }
+
+        .quote {
+            background: #fff7d6;
+            border-left: 4px solid #b8860b;
+            padding: 14px;
+            border-radius: 10px;
+        }
+
+        .footer {
+            margin-top: 22px;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+
         @media (max-width: 860px) { .col-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -220,7 +287,7 @@
 
         <div class="footer">
             <p>📊 Data Source：Nekomini Anime Daily | 📧 Created by：Nekomini Bot | 📅 {{ generated_at }}（北京时间UTC+8）</p>
-            <p>                                               power by  Nekomini</p>
+            <p>power by Nekomini</p>
         </div>
     </div>
 </body>

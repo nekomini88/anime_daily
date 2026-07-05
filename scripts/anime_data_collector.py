@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 动漫日报数据生成脚本 - 从 Jikan/AniList 拉取真实数据并导出日报 JSON
-自动补充中文标题
+稳定中文标题方案：优先 native romaji / 英文；AniList 侧仅作为可选的 extra synonym 通道
 """
 import json
 import sys
@@ -14,8 +14,10 @@ from pathlib import Path
 JIKAN_BASE = "https://api.jikan.moe/v4"
 ANILIST_URL = "https://graphql.anilist.co"
 
-# Cache: mal_id -> Chinese title if available
+
+# Cache: mal_id -> enhanced title candidate
 _zh_cache: dict[int, str] = {}
+
 
 def fetch_json(url, payload=None, headers=None):
     h = {"User-Agent": "anime-daily-report/1.0"}
@@ -33,19 +35,32 @@ def fetch_json(url, payload=None, headers=None):
         print(f"❌ fetch failed {url}: {e}", file=sys.stderr)
         return {}
 
+
+def _jikan_get(path, params):
+    qs = urllib.parse.urlencode(params, doseq=True)
+    url = f"{JIKAN_BASE}{path}?{qs}"
+    return fetch_json(url)
+
+
 def fetch_top_anime(limit=20):
-    data = fetch_json(f"{JIKAN_BASE}/top/anime", {"limit": limit, "sfw": "true"})
-    return data.get("data", [])
+    data = _jikan_get("/top/anime", {"limit": limit, "sfw": "true"})
+    inner = data.get("data") if isinstance(data, dict) else data
+    return inner if isinstance(inner, list) else []
+
 
 def fetch_seasonal_now(limit=15):
-    data = fetch_json(f"{JIKAN_BASE}/seasons/now", {"limit": limit, "sfw": "true"})
-    return data.get("data", [])
+    data = _jikan_get("/seasons/now", {"limit": limit, "sfw": "true"})
+    inner = data.get("data") if isinstance(data, dict) else data
+    return inner if isinstance(inner, list) else []
+
 
 def fetch_anime_search(query, limit=5):
-    data = fetch_json(f"{JIKAN_BASE}/anime", {"q": query, "limit": limit, "sfw": "true", "order_by": "score", "sort": "desc"})
-    return data.get("data", [])
+    data = _jikan_get("/anime", {"q": query, "limit": limit, "sfw": "true", "order_by": "score", "sort": "desc"})
+    inner = data.get("data") if isinstance(data, dict) else data
+    return inner if isinstance(inner, list) else []
 
-def fetch_chinese_titles(mal_ids: list[int]):
+
+def _anilist_zh_candidates(mal_ids):
     if not mal_ids:
         return {}
     query = """
@@ -61,34 +76,67 @@ def fetch_chinese_titles(mal_ids: list[int]):
     """
     payload = {"query": query, "variables": {"ids": mal_ids}}
     data = fetch_json(ANILIST_URL, payload=payload, headers={"Content-Type": "application/json"})
-    out: dict[int, str] = {}
+    out = {}
     try:
         for media in data.get("data", {}).get("Page", {}).get("media", []):
             mid = media.get("idMal")
             title = media.get("title") or {}
-            name = title.get("english") or title.get("romaji") or title.get("native") or ""
-            synonyms = media.get("synonyms") or []
-            # Choose first CJK-ish synonym as zh title proxy
-            chosen = name
-            for s in synonyms:
-                if any("\u4e00" <= ch <= "\u9fff" for ch in s):
-                    chosen = s
-                    break
-            out[int(mid)] = chosen
+            name = (media.get("synonyms") or [""])[0]
+            if not name:
+                name = title.get("english") or title.get("romaji") or title.get("native") or ""
+            out[int(mid)] = name
     except Exception as e:
         print(f"❌ parse anilist failed: {e}", file=sys.stderr)
     return out
 
+
+def load_title_overrides() -> dict[str,str]:
+    p = Path(__file__).with_name("title_overrides.json")
+    if not p.exists():
+        return {}
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+        return {str(k): str(v) for k, v in data.items() if v}
+    except Exception as e:
+        print(f"❌ load title overrides failed: {e}", file=sys.stderr)
+        return {}
+
+
+_TITLE_OVERRIDES = load_title_overrides()
+
+
+def _normalize_candidate(text: str) -> str:
+    text = text.lower()
+    text = text.replace("μ'sic", "music").replace("μ", "u")
+    text = text.replace("'", "").replace("’", "").replace(":", " ").replace("-", " ")
+    text = text.replace("  ", " ").strip()
+    return text
+
+
 def choose_title(anime: dict) -> str:
-    title = anime.get("title") or {}
     mal = anime.get("mal_id")
-    # Prefer cached Chinese title
     if mal and mal in _zh_cache:
         return _zh_cache[mal]
-    # Japanese title is often kanji closer to CN
+
+    direct = None
+    title = anime.get("title") or {}
+    if isinstance(title, dict):
+        direct = title.get("english") or title.get("romaji") or title.get("native")
+    elif isinstance(title, str):
+        direct = title
+
     jp = anime.get("title_japanese")
-    en = title.get("english") or title.get("romaji") or anime.get("title") or "未知作品"
-    return jp or en
+    candidates = [c for c in [direct, jp] if c]
+
+    normalized_map = {_normalize_candidate(c): c for c in candidates}
+    for key, zh in _TITLE_OVERRIDES.items():
+        norm_key = _normalize_candidate(key)
+        if norm_key in normalized_map:
+            return zh
+
+    return next(iter(candidates)) or "未知作品"
+
 
 def build_report(date_str=None):
     if not date_str:
@@ -100,15 +148,18 @@ def build_report(date_str=None):
     source = source[:10] if source else []
 
     mal_ids = [a.get("mal_id") for a in source if a.get("mal_id")]
-    zh_map = fetch_chinese_titles(mal_ids)
-    _zh_cache.update(zh_map)
+    try:
+        zh_map = _anilist_zh_candidates(mal_ids)
+        _zh_cache.update(zh_map)
+    except Exception as e:
+        print(f"⚠️ 中文标题增强失败：{e}", file=sys.stderr)
 
     genres_map = {}
     ranking = []
     for idx, anime in enumerate(source[:10], 1):
         title = choose_title(anime)
         score = anime.get("score") or 0.0
-        genres = [g.get("name","") for g in anime.get("genres",[])]
+        genres = [g.get("name", "") for g in anime.get("genres", [])]
         main_genre = genres[0] if genres else "综合"
         ranking.append({
             "rank": idx,
@@ -142,7 +193,7 @@ def build_report(date_str=None):
     studios = []
     seen = set()
     for anime in source[:20]:
-        studio = ((anime.get("studios") or [{}])[0].get("name","")).strip()
+        studio = ((anime.get("studios") or [{}])[0].get("name", "")).strip()
         if studio and studio not in seen:
             seen.add(studio)
             studios.append(studio)
@@ -176,7 +227,7 @@ def build_report(date_str=None):
     upcoming_source = source[5:10]
     for anime in upcoming_source:
         title = choose_title(anime)
-        studio = ((anime.get("studios") or [{}])[0].get("name","")).strip() or "未知"
+        studio = ((anime.get("studios") or [{}])[0].get("name", "")).strip() or "未知"
         source_type = anime.get("source") or "未公开"
         upcoming.append({
             "title": title,
@@ -248,16 +299,17 @@ def build_report(date_str=None):
         "shortlist": shortlist
     }
 
-    out_dir = Path("/root/anime_daily_report/files") / date_str
+    out_dir = Path("/root/anime_daily/files") / date_str
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"anime_data_{date_str}.json"
-    src_file = Path("/root/anime_daily_report/daily_news") / f"anime_data_{date_str}.json"
+    src_file = Path("/root/anime_daily/daily_news") / f"anime_data_{date_str}.json"
     out_file.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     src_file.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"✅ 动漫日报数据已生成：{out_file}")
     for row in report["ranking"][:10]:
         print(row["title"])
     return report
+
 
 if __name__ == "__main__":
     d = sys.argv[1] if len(sys.argv) > 1 else None

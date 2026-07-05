@@ -8,13 +8,13 @@ set -euo pipefail
 # 3. 发送 HTML 邮件到配置邮箱
 # 4. 发送 TXT 分段消息到 Telegram 频道
 
-cd /root/anime_daily_report
+cd /root/anime_daily
 
 today=$(date +%Y-%m-%d)
-mkdir -p files/"$today"
+mkdir -p files/${today}
 
-# Step 1: 生成数据 JSON
-echo "📊 生成动漫日报数据..."
+echo "📺 开始生成 ${today} 日本动漫番剧日报..."
+
 python3 scripts/anime_data_collector.py "$today"
 
 # Step 2: 生成 HTML 报告
@@ -23,7 +23,7 @@ if [[ ! -f "templates/anime_daily.html.j2" ]]; then
     echo "❌ 缺少模板文件: templates/anime_daily.html.j2"
     exit 1
 fi
-python3 generate_anime_report.py "$today"
+python3 generate_anime_daily.py "$today"
 
 html_file="files/$today/动漫日报_$today.html"
 
@@ -43,3 +43,14 @@ echo "📺 发送 Telegram..."
 python3 send_tg_report.py "$html_file"
 
 echo "🎉 动漫日报发送完成！"
+
+# Step 5: 提交前红线审查（仅审查，不阻断主流程）
+echo "🛡️  红线审查..."
+RED_REPORT="files/$today/red_line_review.txt"
+if python3 /root/tools/git_red_line_review.py scan "$(pwd)" > "$RED_REPORT"; then
+    echo "✅ 红线审查通过"
+else
+    echo "⚠️  红线审查发现潜在问题，已将报告写入：$RED_REPORT"
+    echo "⚠️  日报已发送，但请人工审核上述报告后再提交至 GitHub"
+fi
+
