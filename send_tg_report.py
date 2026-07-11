@@ -24,7 +24,7 @@ config.read(CONFIG_PATH, encoding="utf-8")
 DEFAULT_CHAT = config.get("telegram", "chat_id", fallback="-1004363733232")
 CHUNK_LIMIT = config.getint("telegram", "chunk_limit", fallback=3900)
 
-HERMES_CMD = ["hermes", "send", "--to"]
+HERMES_CMD = ["/root/.local/bin/hermes", "send", "--to"]
 
 
 # ─── HTML → Telegram 等宽纯文本 ─────────────────────────────

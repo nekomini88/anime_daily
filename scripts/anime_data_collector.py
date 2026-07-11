@@ -8,6 +8,7 @@ import sys
 import urllib.request
 import urllib.error
 import urllib.parse
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -36,10 +37,18 @@ def fetch_json(url, payload=None, headers=None):
         return {}
 
 
-def _jikan_get(path, params):
+def _jikan_get(path, params, max_attempts=3, retry_delay=2):
     qs = urllib.parse.urlencode(params, doseq=True)
     url = f"{JIKAN_BASE}{path}?{qs}"
-    return fetch_json(url)
+    last_err = None
+    for attempt in range(1, max_attempts + 1):
+        data = fetch_json(url)
+        if isinstance(data, dict) and data.get("data"):
+            return data["data"]
+        last_err = data.get("error") if isinstance(data, dict) else str(data)
+        print(f"[warn] attempt {attempt}/{max_attempts} failed for {url}: {last_err}", file=sys.stderr)
+        time.sleep(retry_delay * attempt)
+    return []
 
 
 def fetch_top_anime(limit=20):
@@ -106,6 +115,50 @@ def load_title_overrides() -> dict[str,str]:
 _TITLE_OVERRIDES = load_title_overrides()
 
 
+def _fetch_anilist_season_now(limit=15):
+    query = """
+    query {
+      Page(page: 1, perPage: %d) {
+        media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC) {
+          idMal
+          title { romaji english native }
+          synonyms
+          genres
+          studios { nodes { name } }
+          averageScore
+          episodes
+          source
+        }
+      }
+    }
+    """ % limit
+    data = fetch_json(ANILIST_URL, payload={"query": query}, headers={"Content-Type": "application/json"})
+    try:
+        media_list = data.get("data", {}).get("Page", {}).get("media", [])
+        normalized = []
+        for m in media_list:
+            title = m.get("title") or {}
+            normalized.append({
+                "mal_id": m.get("idMal"),
+                "title": {
+                    "english": title.get("english"),
+                    "romaji": title.get("romaji"),
+                    "native": title.get("native"),
+                },
+                "title_japanese": title.get("native"),
+                "synonyms": m.get("synonyms") or [],
+                "genres": [{"name": g} for g in (m.get("genres") or [])],
+                "studios": [{"name": (s.get("name") or "").strip()} for s in (m.get("studios", {}).get("nodes") or [])],
+                "score": (m.get("averageScore") or 0) / 10,
+                "episodes": m.get("episodes"),
+                "source": m.get("source"),
+            })
+        return normalized
+    except Exception as e:
+        print(f"❌ parse anilist fallback failed: {e}", file=sys.stderr)
+        return []
+
+
 def _normalize_candidate(text: str) -> str:
     text = text.lower()
     text = text.replace("μ'sic", "music").replace("μ", "u")
@@ -145,6 +198,9 @@ def build_report(date_str=None):
     seasonal = fetch_seasonal_now(limit=15)
     top = fetch_top_anime(limit=20)
     source = seasonal if seasonal else top
+    if not source:
+        print("[warn] Jikan unavailable, falling back to AniList", file=sys.stderr)
+        source = _fetch_anilist_season_now(limit=15)
     # Dedupe by mal_id while preserving order
     seen = set()
     deduped = []
