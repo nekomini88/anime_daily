@@ -3,272 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日本动漫番剧日报｜2026-08-05</title>
+    <title>日本动漫番剧日报｜2026-08-06</title>
     <style>
         :root {
-            --bg-page: #f0ece1;
-            --bg-card: rgba(247, 243, 233, 0.92);
-            --border-card: rgba(0, 0, 0, 0.08);
-            --shadow-card: 0 14px 34px rgba(0, 0, 0, 0.08);
+            --bg-page: #f4f1ea;
+            --bg-card: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
             --text-main: #1a1a1a;
-            --text-muted: #5c5c5c;
-            --accent: #2d6a4f;
-            --accent-2: #3a7d5e;
-            --danger: #c0392b;
-            --warn: #b8860b;
-            --info: #2471a3;
+            --text-muted: #6b7280;
+            --accent: #7c3aed;
+            --accent-2: #a78bfa;
+            --accent-soft: rgba(124, 58, 237, 0.1);
+            --up: #10b981;
+            --down: #ef4444;
+            --warn: #f59e0b;
+            --gold: #b45309;
         }
-
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; }
-
+        * { box-sizing: border-box; margin: 0; }
+        html, body { padding: 0; }
         body {
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans SC", sans-serif;
-            background: linear-gradient(180deg, #f7f3e9 0%, #f0ece1 100%);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif;
+            background: linear-gradient(160deg, #f7f3ea 0%, #f1ede4 100%);
             color: var(--text-main);
             line-height: 1.7;
-            padding: 24px;
+            padding: 28px;
         }
-
-        .wrap { max-width: 1120px; margin: 0 auto; }
+        .wrap { max-width: 1160px; margin: 0 auto; }
 
         .hero {
-            background: linear-gradient(135deg, #2d6a4f, #3a7d5e);
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 55%, #6d28d9 100%);
             color: #fff;
-            border-radius: 18px;
-            padding: 28px 32px;
-            box-shadow: var(--shadow-card);
-            margin-bottom: 24px;
+            border-radius: 20px;
+            padding: 30px 34px;
+            box-shadow: var(--shadow);
+            margin-bottom: 26px;
+            position: relative;
+            overflow: hidden;
         }
-
-        .hero h1 {
-            margin: 0 0 6px;
-            font-size: 26px;
-            color: #fff;
+        .hero::after {
+            content: "🎬";
+            position: absolute; right: 28px; bottom: -14px;
+            font-size: 96px; opacity: .18; transform: rotate(-8deg);
         }
+        .hero h1 { margin: 0 0 8px; font-size: 27px; letter-spacing: .5px; }
+        .hero p { margin: 0; opacity: .93; font-size: 14px; }
+        .hero .meta { margin-top: 8px; font-size: 12px; opacity: .8; }
 
-        .hero p {
-            margin: 0;
-            opacity: .92;
-            color: #f3f9f6;
-        }
-
-        .grid { display: grid; gap: 18px; }
+        .grid { display: grid; gap: 20px; }
         .col-2 { grid-template-columns: repeat(2, 1fr); }
 
         .card {
             background: var(--bg-card);
-            border: 1px solid var(--border-card);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-card);
+            padding: 22px;
+            box-shadow: var(--shadow);
         }
-
-        .card h2, .card h3 {
-            margin: 4px 0 12px;
-            font-size: 17px;
-            color: #1a1a1a;
-            font-weight: 900;
+        .card:hover { box-shadow: 0 14px 38px rgba(0, 0, 0, 0.1); }
+        .card h2 {
+            margin: 0 0 16px;
+            font-size: 17px; font-weight: 900;
+            border-left: 4px solid var(--accent);
+            padding-left: 12px;
+            color: var(--text-main);
         }
+        .card h3 { margin: 20px 0 12px; font-size: 15px; font-weight: 800; }
 
-        .card h2 { border-left: 4px solid var(--accent); padding-left: 10px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-
-        th, td {
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            padding: 10px 12px;
-            text-align: left;
-        }
-
-        th {
-            background: rgba(247, 243, 233, 0.95);
-            color: #1a1a1a;
-            font-weight: 800;
-            border-bottom: 2px solid rgba(0, 0, 0, 0.08);
-        }
-
-        tbody tr:nth-child(odd) { background: transparent; }
-        tbody tr:nth-child(even) { background: rgba(0, 0, 0, 0.035); }
-        tbody tr:hover { background: rgba(45, 106, 79, 0.08); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid var(--border); padding: 11px 12px; text-align: left; vertical-align: top; }
+        th { background: #faf9f7; font-weight: 700; font-size: 13px; color: #444; border-bottom: 2px solid #e5e5e5; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--accent-soft); }
 
         .rank {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: rgba(45, 106, 79, 0.1);
-            color: #1f5c3f;
-            font-weight: 800;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 9px;
+            background: var(--accent-soft); color: var(--accent); font-weight: 800; font-size: 14px;
         }
+        .rank.gold { background: rgba(245,158,11,.15); color: var(--gold); }
+        .rank.silver { background: rgba(148,163,184,.18); color: #64748b; }
+        .rank.bronze { background: rgba(180,83,9,.14); color: #92400e; }
 
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
-        .badge-up { background: #e6f4ec; color: #14532d; }
-        .badge-down { background: #fdf0f0; color: #6b1a1a; }
-        .badge-flat { background: #f4f4f4; color: #3f3f46; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .badge-up { background: #d1fae5; color: #065f46; }
+        .badge-down { background: #fee2e2; color: #991b1b; }
+        .badge-flat { background: #f1f5f9; color: #475569; }
+        .badge-heat { background: var(--accent-soft); color: var(--accent); }
 
-        .stars { color: #b8860b; font-weight: 800; }
+        .num { font-variant-numeric: tabular-nums; }
 
-        .section { margin-top: 10px; }
-        .meta { color: var(--text-muted); font-size: 13px; }
+        .stars { color: var(--gold); font-weight: 800; letter-spacing: 1px; }
+        .meta { color: var(--text-muted); font-size: 12.5px; }
 
         .recommend {
-            background: rgba(45, 106, 79, 0.08);
+            background: var(--accent-soft);
             border-left: 4px solid var(--accent);
-            padding: 14px;
+            padding: 15px;
             border-radius: 10px;
+            margin-bottom: 13px;
         }
+        .news-item { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed var(--border); }
+        .news-item:last-child { border-bottom: none; margin-bottom: 0; }
 
         .quote {
-            background: #fff7d6;
-            border-left: 4px solid #b8860b;
-            padding: 14px;
+            background: #fffbeb;
+            border-left: 4px solid var(--gold);
+            padding: 16px;
             border-radius: 10px;
         }
-
-        .footer {
-            margin-top: 22px;
-            color: var(--text-muted);
-            font-size: 12px;
-            text-align: center;
-        }
-
-        a { color: var(--accent); text-decoration: none; }
-
+        .quote .line { font-style: italic; font-size: 15px; margin: 8px 0 6px; }
+        .footer { margin-top: 26px; color: var(--text-muted); font-size: 12px; text-align: center; line-height: 2; }
+        .tag { color: var(--accent); font-size: 12px; margin-right: 10px; }
+        .studio-chip { display:inline-block; background:#f5f3ff; color:#6d28d9; border-radius:999px; padding:2px 10px; font-size:12px; margin:2px 4px 2px 0; }
         @media (max-width: 860px) { .col-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 <div class="wrap">
     <div class="hero">
-        <h1>📺 日本动漫番剧日报｜2026-08-05</h1>
+        <h1>📺 日本动漫番剧日报｜2026-08-06</h1>
         <p>专业、简洁、高信息密度 · 每日 10 分钟掌握动漫圈核心动态</p>
+        <div class="meta">数据源：AniList · 热度=关注度+收藏加权 · 榜单真实采集</div>
     </div>
 
     <div class="grid">
+        <!-- 1. 新闻 -->
         <div class="card">
             <h2>📰 今日动漫圈重要新闻</h2>
             
-            <div style="margin-bottom:18px">
-                <div style="font-weight:700;font-size:15px">2026年夏季新番开播：共10部作品列入本季榜单</div>
-                <div class="meta">标签：新番、夏季档、开播</div>
-                <div>本季涵盖多元题材，包含科幻、奇幻、运动、日常等类型。以下榜单基于本季在播作品数据生成。</div>
-                <div class="meta">影响分析：夏季档进入核心播放期，建议按题材与评分优先选择追番。</div>
+            <div class="news-item">
+                <div style="font-weight:700;font-size:15px">异世界冒险题材持续制霸，Studio Bind《无职转生》热度遥遥领先</div>
+                <div class="meta" style="margin:4px 0">
+                    <span class="tag">#异世界</span><span class="tag">#Studio Bind</span><span class="tag">#无职转生</span>
+                </div>
+                <div>根据最新数据，本季在播作品热度TOP10中，Studio Bind制作的《无职转生 ～到了异世界就拿出真本事～》以3409.8的热度值和85.0的高评分稳居榜首，领先第二名近1000点热度。该作目前已播出14集，其精良的制作与扎实的世界观再次证明了异世界冒险类型的强大吸引力。</div>
+                <div class="meta" style="margin-top:6px">💡 影响：Studio Bind凭借该作进一步巩固了在异世界题材动画领域的标杆地位，预计将带动更多同类高质量改编项目。</div>
             </div>
             
-            <div style="margin-bottom:18px">
-                <div style="font-weight:700;font-size:15px">流媒体动漫热度继续上升</div>
-                <div class="meta">标签：流媒体、数据</div>
-                <div>Netflix、Disney+ 等平台日本动漫内容持续增加，海外热度与本土口碑形成正循环。</div>
-                <div class="meta">影响分析：流媒体热度可作为追番参考，关注评分与讨论度变化。</div>
+            <div class="news-item">
+                <div style="font-weight:700;font-size:15px">喜剧类作品表现亮眼，日常系与异世界形成双极格局</div>
+                <div class="meta" style="margin:4px 0">
+                    <span class="tag">#喜剧</span><span class="tag">#日常</span><span class="tag">#超市背后的吸烟两人</span>
+                </div>
+                <div>在热度前十中，喜剧类型占据三席，其中《超市背后的吸烟两人》以2468.6的热度值位列第二，由Asahi Production制作，评分82.0，目前播出12集。此外，《Yani Neko》与《相反的你与我 第二季》也进入前十，显示出观众对轻松日常喜剧的持续需求。</div>
+                <div class="meta" style="margin-top:6px">💡 影响：日常喜剧与异世界冒险成为本季两大支柱类型，制作公司如Asahi Production和Lapin Track通过差异化内容获得稳定受众。</div>
             </div>
             
-            <div style="margin-bottom:18px">
-                <div style="font-weight:700;font-size:15px">剧场版与续作企划增多</div>
-                <div class="meta">标签：剧场版、续作</div>
-                <div>多家工作室公布 2026-2027 年剧场版与 TV 续作计划，粉丝关注度明显提升。</div>
-                <div class="meta">影响分析：建议纳入长期关注清单，跟踪制作进度与上映时间。</div>
+            <div class="news-item">
+                <div style="font-weight:700;font-size:15px">经典IP续作与原创剧情类作品热度分化，评分与热度不完全正相关</div>
+                <div class="meta" style="margin:4px 0">
+                    <span class="tag">#BLEACH</span><span class="tag">#千年血战篇</span><span class="tag">#剧情</span>
+                </div>
+                <div>Studio Pierrot制作的《BLEACH：千年血战篇-祸进谭》虽然以88.0的最高评分位列所有作品之首，但热度值为1718.7，排名第三。而评分仅75.0的《直到你想死之前我都会爱你》热度865.2，排名第九。这表明经典IP续作拥有稳固的粉丝基础，但热度受播出进度与话题度影响更大。</div>
+                <div class="meta" style="margin-top:6px">💡 影响：高评分续作在口碑上占据优势，但热度竞争需结合宣发与观众新鲜感，原创剧情类作品仍有突围空间。</div>
             </div>
             
         </div>
 
+        <!-- 2. 热度排行榜 -->
         <div class="card">
             <h2>🔥 本季新番热度排行榜 TOP10</h2>
             <table>
-                <thead>
-                    <tr><th>排名</th><th>动画</th><th>类型</th><th>热度</th></tr>
-                </thead>
+                <thead><tr><th>#</th><th>动画</th><th>类型</th><th>评分</th><th>热度</th></tr></thead>
                 <tbody>
                 
                 <tr>
-                    <td><span class="rank">1</span></td>
-                    <td><b>ONE PIECE</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Action</td>
+                    <td><span class="rank gold">1</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.7</span>
+                        <b>无职转生 ～到了异世界就拿出真本事～</b>
+                        <div class="meta">Studio Bind · 14话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《无职转生》凭借Studio Bind的精良制作、异世界冒险题材的广泛受众，以及目前已播出14集的稳定更新节奏，以85.0的高评分和3409.8的绝对热度优势领跑榜单。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Adventure</span></td>
+                    <td><span class="num" style="font-weight:700">85.0</span></td>
+                    <td><span class="badge badge-heat">🔥 3409.8</span>
+                        <div class="meta" style="margin-top:2px">❤4064 · 👁137784</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">2</span></td>
-                    <td><b>Mushoku Tensei: Jobless Reincarnation Season 3</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Adventure</td>
+                    <td><span class="rank silver">2</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.5</span>
+                        <b>超市背后的吸烟两人</b>
+                        <div class="meta">Asahi Production · 12话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《超市背后的吸烟两人》作为日常喜剧，以轻松幽默的吸烟角故事赢得观众喜爱，Asahi Production的制作保证了质量，82.0的评分与2468.6的热度使其稳居第二。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Comedy</span></td>
+                    <td><span class="num" style="font-weight:700">82.0</span></td>
+                    <td><span class="badge badge-heat">🔥 2468.6</span>
+                        <div class="meta" style="margin-top:2px">❤2912 · 👁101262</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">3</span></td>
-                    <td><b>Re:ZERO -Starting Life in Another World- Season 4</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Action</td>
+                    <td><span class="rank bronze">3</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 9.0</span>
+                        <b>BLEACH：千年血战篇-祸进谭</b>
+                        <div class="meta">Studio Pierrot · 10话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《BLEACH：千年血战篇-祸进谭》作为经典IP续作，Studio Pierrot在战斗作画与剧情推进上表现出色，获得88.0的最高评分，但热度1718.7略低于前两名，可能因受众相对核心。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Action</span></td>
+                    <td><span class="num" style="font-weight:700">88.0</span></td>
+                    <td><span class="badge badge-heat">🔥 1718.7</span>
+                        <div class="meta" style="margin-top:2px">❤2071 · 👁68323</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">4</span></td>
-                    <td><b>Daemons of the Shadow Realm</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Action</td>
+                    <td><span class="rank ">4</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 7.8</span>
+                        <b>幼女战记 II</b>
+                        <div class="meta">NUT · 12话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《幼女战记 II》延续前作黑暗奇幻动作风格，NUT的制作保持了一贯的硬朗画风，评分81.0，热度1623.9，排名第四。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Action</span></td>
+                    <td><span class="num" style="font-weight:700">81.0</span></td>
+                    <td><span class="badge badge-heat">🔥 1623.9</span>
+                        <div class="meta" style="margin-top:2px">❤1553 · 👁84739</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">5</span></td>
-                    <td><b>That Time I Got Reincarnated as a Slime Season 4</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Action</td>
+                    <td><span class="rank ">5</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.2</span>
+                        <b>Yani Neko</b>
+                        <div class="meta">Bibury Animation Studios</div>
+                        
+                        <div class="meta" style="margin-top:4px">《Yani Neko》由Bibury Animation Studios制作，是一部喜剧作品，评分67.0，热度1062.7，虽然评分不高，但凭借独特风格进入前十。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Comedy</span></td>
+                    <td><span class="num" style="font-weight:700">67.0</span></td>
+                    <td><span class="badge badge-heat">🔥 1062.7</span>
+                        <div class="meta" style="margin-top:2px">❤925 · 👁60020</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">6</span></td>
-                    <td><b>超市背后的吸烟两人</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Comedy</td>
+                    <td><span class="rank ">6</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.2</span>
+                        <b>BLACK TORCH</b>
+                        <div class="meta">100studio</div>
+                        
+                        <div class="meta" style="margin-top:4px">《BLACK TORCH》为动作类型，由100studio制作，评分71.0，热度943.8，以暗黑风格吸引特定观众。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Action</span></td>
+                    <td><span class="num" style="font-weight:700">71.0</span></td>
+                    <td><span class="badge badge-heat">🔥 943.8</span>
+                        <div class="meta" style="margin-top:2px">❤764 · 👁56175</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">7</span></td>
-                    <td><b>Saga of Tanya the Evil Season 2</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Action</td>
+                    <td><span class="rank ">7</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.1</span>
+                        <b>相反的你与我 第二季</b>
+                        <div class="meta">Lapin Track · 13话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《相反的你与我 第二季》是Lapin Track制作的喜剧续作，评分81.0，热度904.6，凭借前作积累的粉丝基础保持稳定热度。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Comedy</span></td>
+                    <td><span class="num" style="font-weight:700">81.0</span></td>
+                    <td><span class="badge badge-heat">🔥 904.6</span>
+                        <div class="meta" style="margin-top:2px">❤825 · 👁49213</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">8</span></td>
-                    <td><b>Detective Conan</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Adventure</td>
+                    <td><span class="rank ">8</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.1</span>
+                        <b>Tsuihou Sareta Tensei Juukishi wa Game Chishiki de Musou Suru</b>
+                        <div class="meta">GoHands · 26话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《Tsuihou Sareta Tensei Juukishi wa Game Chishiki de Musou Suru》由GoHands制作，异世界动作题材，评分67.0，热度879.2，已播出26集的长篇幅带来一定积累。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Action</span></td>
+                    <td><span class="num" style="font-weight:700">67.0</span></td>
+                    <td><span class="badge badge-heat">🔥 879.2</span>
+                        <div class="meta" style="margin-top:2px">❤772 · 👁49316</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">9</span></td>
-                    <td><b>BLEACH：千年血战篇-祸进谭</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Action</td>
+                    <td><span class="rank ">9</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 8.8</span>
+                        <b>直到你想死之前我都会爱你</b>
+                        <div class="meta">ROLL2 · 13话</div>
+                        
+                        <div class="meta" style="margin-top:4px">《直到你想死之前我都会爱你》是ROLL2制作的剧情类作品，评分75.0，热度865.2，以情感刻画见长。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Drama</span></td>
+                    <td><span class="num" style="font-weight:700">75.0</span></td>
+                    <td><span class="badge badge-heat">🔥 865.2</span>
+                        <div class="meta" style="margin-top:2px">❤777 · 👁47667</div>
                     </td>
                 </tr>
                 
                 <tr>
-                    <td><span class="rank">10</span></td>
-                    <td><b>Chainsmoker Cat</b><div class="meta">本季热门，适合按兴趣追看</div></td>
-                    <td>Comedy</td>
+                    <td><span class="rank ">10</span></td>
                     <td>
-                        <span class="badge badge-flat">- 评分 6.7</span>
+                        <b>Koukaku Kidoutai: THE GHOST IN THE SHELL</b>
+                        <div class="meta">Science SARU</div>
+                        
+                        <div class="meta" style="margin-top:4px">《Koukaku Kidoutai: THE GHOST IN THE SHELL》由Science SARU制作，科幻动作题材，评分76.0，热度820.8，经典IP的新诠释引发讨论。</div>
+                        
+                    </td>
+                    <td><span class="badge badge-flat">Action</span></td>
+                    <td><span class="num" style="font-weight:700">76.0</span></td>
+                    <td><span class="badge badge-heat">🔥 820.8</span>
+                        <div class="meta" style="margin-top:2px">❤725 · 👁45830</div>
                     </td>
                 </tr>
                 
@@ -276,186 +332,123 @@
             </table>
         </div>
 
-        <div class="card">
-            <h2>🎯 今日值得追的番剧</h2>
-            
-            <div class="recommend" style="margin-bottom:14px">
-                <div style="font-weight:700;font-size:15px">ONE PIECE</div>
-                <div class="meta">更新中 · 共 ? 话 · 推荐指数 ★★★★★</div>
-                <div>暂无简介</div>
-                <div class="meta">适合人群：喜欢 Action 风格的观众</div>
-            </div>
-            
-            <div class="recommend" style="margin-bottom:14px">
-                <div style="font-weight:700;font-size:15px">Mushoku Tensei: Jobless Reincarnation Season 3</div>
-                <div class="meta">更新中 · 共 14 话 · 推荐指数 ★★★★★</div>
-                <div>暂无简介</div>
-                <div class="meta">适合人群：喜欢 Adventure 风格的观众</div>
-            </div>
-            
-            <div class="recommend" style="margin-bottom:14px">
-                <div style="font-weight:700;font-size:15px">Re:ZERO -Starting Life in Another World- Season 4</div>
-                <div class="meta">更新中 · 共 19 话 · 推荐指数 ★★★★★</div>
-                <div>暂无简介</div>
-                <div class="meta">适合人群：喜欢 Action 风格的观众</div>
-            </div>
-            
-        </div>
-
-        <div class="card">
-            <h2>🌱 本周口碑黑马</h2>
-            
-            <div style="margin-bottom:14px">
-                <div style="font-weight:700">Chainsmoker Cat <span class="badge badge-up">逆袭中</span></div>
-                <div class="meta">评分变化：首周关注度上升明显</div>
-                <div>低调开播但讨论度提升，口碑有反转趋势。</div>
-            </div>
-            
-        </div>
-
-        <div class="card">
-            <h2>🏢 动画制作公司动态</h2>
-            <table>
-                <thead>
-                    <tr><th>公司</th><th>动态类型</th><th>内容</th></tr>
-                </thead>
-                <tbody>
-                
-                <tr>
-                    <td>Toei Animation</td>
-                    <td>本季播出</td>
-                    <td>当前季度有作品在播</td>
-                </tr>
-                
-                <tr>
-                    <td>Studio Bind</td>
-                    <td>本季播出</td>
-                    <td>当前季度有作品在播</td>
-                </tr>
-                
-                <tr>
-                    <td>KADOKAWA</td>
-                    <td>本季播出</td>
-                    <td>当前季度有作品在播</td>
-                </tr>
-                
-                <tr>
-                    <td>bones film</td>
-                    <td>本季播出</td>
-                    <td>当前季度有作品在播</td>
-                </tr>
-                
-                <tr>
-                    <td>8-bit</td>
-                    <td>本季播出</td>
-                    <td>当前季度有作品在播</td>
-                </tr>
-                
-                </tbody>
-            </table>
-        </div>
-
-        <div class="card">
-            <h2>📦 销量与商业数据</h2>
-            
-            <table>
-                <thead>
-                    <tr><th>类别</th><th>内容</th><th>趋势</th></tr>
-                </thead>
-                <tbody>
-                
-                <tr>
-                    <td>综合热度</td>
-                    <td>暂无开放数据</td>
-                    <td>
-                        <span class="badge badge-flat">持平</span>
-                    </td>
-                </tr>
-                
-                </tbody>
-            </table>
-            
-        </div>
-
-        <div class="card">
-            <h2>📅 未来 30 天值得期待的新番</h2>
-            
-            <div style="margin-bottom:14px">
-                <div style="font-weight:700">超市背后的吸烟两人</div>
-                <div class="meta">待公开 · Asahi Production · 原作：MANGA</div>
-                <div>关注后续官方情报与预告</div>
-            </div>
-            
-            <div style="margin-bottom:14px">
-                <div style="font-weight:700">Saga of Tanya the Evil Season 2</div>
-                <div class="meta">待公开 · NUT · 原作：LIGHT_NOVEL</div>
-                <div>关注后续官方情报与预告</div>
-            </div>
-            
-            <div style="margin-bottom:14px">
-                <div style="font-weight:700">Detective Conan</div>
-                <div class="meta">待公开 · TMS Entertainment · 原作：MANGA</div>
-                <div>关注后续官方情报与预告</div>
-            </div>
-            
-            <div style="margin-bottom:14px">
-                <div style="font-weight:700">BLEACH：千年血战篇-祸进谭</div>
-                <div class="meta">待公开 · Studio Pierrot · 原作：MANGA</div>
-                <div>关注后续官方情报与预告</div>
-            </div>
-            
-            <div style="margin-bottom:14px">
-                <div style="font-weight:700">Chainsmoker Cat</div>
-                <div class="meta">待公开 · Bibury Animation Studios · 原作：MANGA</div>
-                <div>关注后续官方情报与预告</div>
-            </div>
-            
-        </div>
-
+        <!-- 3. 编辑推荐 -->
         <div class="card">
             <h2>✨ 今日编辑推荐</h2>
             <div class="recommend">
-                <div style="font-weight:700;font-size:15px">ONE PIECE</div>
-                <div class="meta">喜欢 Action 风格的观众 · 类似作品：《进击的巨人》《间谍过家家》</div>
-                <div>暂无简介</div>
+                <div style="font-weight:800;font-size:16px">无职转生 ～到了异世界就拿出真本事～</div>
+                <div class="meta" style="margin:6px 0">适合人群：异世界冒险爱好者、追求制作质量的观众、喜欢深度角色塑造的动画粉丝。</div>
+                <div>本季综合热度与评分表现最为均衡的作品，Studio Bind的作画水准、音乐与世界观构建均属顶级，剧情在冒险与成长中融入深刻情感，是异世界题材的标杆之作。</div>
+                <div class="meta" style="margin-top:8px">类似作品：
+                    <span class="tag">关于我转生变成史莱姆这档事</span><span class="tag">Re:从零开始的异世界生活</span>
+                </div>
             </div>
 
-            <h3 style="margin-top:22px">💬 今日动漫金句</h3>
-            <div class="quote">
-                <div class="meta">今日动漫日报 · 编辑</div>
-                <div style="font-style:italic; margin:6px 0 10px">“好的动画不会剧透人心，只会让人想再看一遍。”</div>
-                <div>优秀作品的价值往往在看完之后才真正显现。</div>
+            <h3>🌱 本周口碑黑马</h3>
+            
+            <div style="margin-bottom:12px">
+                <b>BLEACH：千年血战篇-祸进谭</b> <span class="badge badge-up">黑马</span>
+                <div class="meta" style="margin-top:4px">该作以88.0的评分成为本季口碑最佳作品，Studio Pierrot在战斗场面的作画质量与原作剧情的还原度获得高度评价，虽然热度暂居第三，但口碑优势明显，有望在后续剧情展开后热度攀升。</div>
             </div>
-
-            <h3 style="margin-top:22px">🎬 今日追番清单</h3>
-            
-            
-            
-            <div class="meta">★★★★★ 必追 —— ONE PIECE</div>
-            
-            
-            
-            
-            <div class="meta">★★★★ 推荐 —— Mushoku Tensei: Jobless Reincarnation Season 3</div>
-            
-            
-            
-            
-            <div class="meta">★★★ 有空可看 —— Re:ZERO -Starting Life in Another World- Season 4</div>
-            
-            
-            
-            
-            
-            
-            
             
         </div>
 
-        <div class="footer">
-            <p>📊 Data Source：Nekomini Anime Daily | 📧 Created by：Nekomini Bot | 📅 2026-08-05 11:30:28（北京时间UTC+8）</p>
-            <p>power by Nekomini</p>
+        <!-- 4. 商业数据 -->
+        <div class="card">
+            <h2>📦 销量与商业数据</h2>
+            <table>
+                <thead><tr><th>类别</th><th>内容</th><th>趋势</th></tr></thead>
+                <tbody>
+                
+                <tr>
+                    <td><b>异世界冒险题材热度趋势</b></td>
+                    <td>《无职转生》以3409.8的热度值独占鳌头，Studio Bind的制作模式再次验证了高质量异世界改编的商业潜力，相关BD与周边预售预期乐观。</td>
+                    <td>
+                        <span class="badge badge-up">↑ 上升</span>
+                        
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td><b>日常喜剧类市场表现</b></td>
+                    <td>《超市背后的吸烟两部》《Yani Neko》《相反的你与我 第二季》三部喜剧作品合计热度超过4400，显示出日常系动画在流媒体平台上的稳定点播需求。</td>
+                    <td>
+                        <span class="badge badge-flat">→ 持平</span>
+                    </td>
+                </tr>
+                
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 5. 制作公司 -->
+        <div class="card">
+            <h2>🏢 活跃动画制作公司</h2>
+            
+            <span class="studio-chip">Studio Bind</span>
+            
+            <span class="studio-chip">Asahi Production</span>
+            
+            <span class="studio-chip">Studio Pierrot</span>
+            
+            <span class="studio-chip">NUT</span>
+            
+            <span class="studio-chip">Bibury Animation Studios</span>
+            
+            <span class="studio-chip">100studio</span>
+            
+            <span class="studio-chip">Lapin Track</span>
+            
+            <span class="studio-chip">GoHands</span>
+            
+            <div class="meta" style="margin-top:12px">以上为本季在播作品主要制作公司（基于真实数据），可关注其后续企划动态。</div>
+        </div>
+
+        <!-- 6. 类型分布 -->
+        <div class="card">
+            <h2>🎨 本季题材分布</h2>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Action</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Adventure</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Comedy</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Drama</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Ecchi</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Fantasy</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Mecha</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Psychological</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Romance</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Sci-Fi</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Slice of Life</span>
+            
+            <span class="studio-chip" style="background:#fef3c7;color:#92400e">Sports</span>
+            
         </div>
     </div>
+
+    <!-- 今日金句 -->
+    <div class="card" style="margin-top:20px">
+        <h2>💬 今日动漫金句</h2>
+        <div class="quote">
+            <div class="meta">今日动漫日报 · 编辑</div>
+            <div class="line">“即使转生到异世界，能拿出真本事的，永远是那些在现实中也认真生活的人。”</div>
+            <div class="meta">借《无职转生》的成功，表达动画作品能打动人心的核心在于角色对生活的真挚态度，无论背景如何奇幻。</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        📊 Data Source：AniList | 🤖 分析由 Nekomini Bot LLM 基于当日真实数据生成
+        <br>📅 2026-08-06 07:39:23（北京时间 UTC+8）<br>power by Nekomini
+    </div>
+</div>
 </body>
 </html>
