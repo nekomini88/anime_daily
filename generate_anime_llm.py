@@ -26,7 +26,7 @@ def _load_api_key():
     return os.environ.get("OPENCODE_ZEN_API_KEY")
 
 
-def _call_zen(system, user, max_tokens=2400, temperature=0.7):
+def _call_zen(system, user, max_tokens=4000, temperature=0.7):
     key = _load_api_key()
     if not key:
         raise RuntimeError("缺少 OPENCODE_ZEN_API_KEY")
