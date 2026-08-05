@@ -22,6 +22,7 @@ config.ini
 
 # 生成产物
 files/
+llm_data/
 
 __pycache__/
 *.pyc

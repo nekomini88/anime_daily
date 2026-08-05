@@ -1,111 +1,62 @@
 #!/usr/bin/env python3
-"""
-动漫日报数据生成脚本 - 从 Jikan/AniList 拉取真实数据并导出日报 JSON
-稳定中文标题方案：优先 native romaji / 英文；AniList 侧仅作为可选的 extra synonym 通道
+"""动漫日报数据生成脚本
+主数据源：AniList GraphQL（稳定，含真实 热度 favourites/popularity、评分、集数、类型、工作室、来源）
+备用数据源：Jikan API v4（AniList 失败时回退）
+内容类章节（news/quote/editor/hit/sales）由 generate_anime_llm.py 基于真实数据生成，本脚本只负责真实结构化数据。
 """
 import json
 import sys
 import urllib.request
-import urllib.error
 import urllib.parse
+import urllib.error
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-JIKAN_BASE = "https://api.jikan.moe/v4"
 ANILIST_URL = "https://graphql.anilist.co"
+JIKAN_BASE = "https://api.jikan.moe/v4"
 
 
-# Cache: mal_id -> enhanced title candidate
-_zh_cache: dict[int, str] = {}
-
-
-def fetch_json(url, payload=None, headers=None):
-    h = {"User-Agent": "anime-daily-report/1.0"}
+# ---------- 通用请求 ----------
+def _post_json(url, payload, headers=None, timeout=25):
+    h = {"User-Agent": "anime-daily-report/1.0", "Content-Type": "application/json"}
     if headers:
         h.update(headers)
-    data = None
-    if payload is not None:
-        h.setdefault("Content-Type", "application/json")
-        data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers=h)
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=h)
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except Exception as e:
-        print(f"❌ fetch failed {url}: {e}", file=sys.stderr)
+        print(f"❌ POST failed {url}: {e}", file=sys.stderr)
         return {}
 
 
-def _jikan_get(path, params, max_attempts=3, retry_delay=2):
+def _jikan_get(path, params, max_attempts=2, retry_delay=2):
     qs = urllib.parse.urlencode(params, doseq=True)
     url = f"{JIKAN_BASE}{path}?{qs}"
-    last_err = None
     for attempt in range(1, max_attempts + 1):
-        data = fetch_json(url)
-        if isinstance(data, dict) and data.get("data"):
-            return data["data"]
-        last_err = data.get("error") if isinstance(data, dict) else str(data)
-        print(f"[warn] attempt {attempt}/{max_attempts} failed for {url}: {last_err}", file=sys.stderr)
-        time.sleep(retry_delay * attempt)
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "anime-daily-report/1.0"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read())
+            d = data.get("data") if isinstance(data, dict) else data
+            return d if isinstance(d, list) else []
+        except Exception as e:
+            print(f"[warn] jikan {url} attempt {attempt}: {e}", file=sys.stderr)
+            time.sleep(retry_delay * attempt)
     return []
 
 
-def fetch_top_anime(limit=20):
-    data = _jikan_get("/top/anime", {"limit": limit, "sfw": "true"})
-    inner = data.get("data") if isinstance(data, dict) else data
-    return inner if isinstance(inner, list) else []
+# ----------标题稳定性（保留现有方案）----------
+_zh_cache: dict[int, str] = {}
 
 
-def fetch_seasonal_now(limit=15):
-    data = _jikan_get("/seasons/now", {"limit": limit, "sfw": "true"})
-    inner = data.get("data") if isinstance(data, dict) else data
-    return inner if isinstance(inner, list) else []
-
-
-def fetch_anime_search(query, limit=5):
-    data = _jikan_get("/anime", {"q": query, "limit": limit, "sfw": "true", "order_by": "score", "sort": "desc"})
-    inner = data.get("data") if isinstance(data, dict) else data
-    return inner if isinstance(inner, list) else []
-
-
-def _anilist_zh_candidates(mal_ids):
-    if not mal_ids:
-        return {}
-    query = """
-    query ($ids: [Int]) {
-      Page(page: 1, perPage: 50) {
-        media(idMal_in: $ids, type: ANIME) {
-          idMal
-          title { romaji english native }
-          synonyms
-        }
-      }
-    }
-    """
-    payload = {"query": query, "variables": {"ids": mal_ids}}
-    data = fetch_json(ANILIST_URL, payload=payload, headers={"Content-Type": "application/json"})
-    out = {}
-    try:
-        for media in data.get("data", {}).get("Page", {}).get("media", []):
-            mid = media.get("idMal")
-            title = media.get("title") or {}
-            name = (media.get("synonyms") or [""])[0]
-            if not name:
-                name = title.get("english") or title.get("romaji") or title.get("native") or ""
-            out[int(mid)] = name
-    except Exception as e:
-        print(f"❌ parse anilist failed: {e}", file=sys.stderr)
-    return out
-
-
-def load_title_overrides() -> dict[str,str]:
+def load_title_overrides() -> dict[str, str]:
     p = Path(__file__).with_name("title_overrides.json")
     if not p.exists():
         return {}
     try:
-        with open(p, encoding="utf-8") as f:
-            data = json.load(f)
+        data = json.loads(p.read_text(encoding="utf-8"))
         return {str(k): str(v) for k, v in data.items() if v}
     except Exception as e:
         print(f"❌ load title overrides failed: {e}", file=sys.stderr)
@@ -115,261 +66,182 @@ def load_title_overrides() -> dict[str,str]:
 _TITLE_OVERRIDES = load_title_overrides()
 
 
-def _fetch_anilist_season_now(limit=15):
-    query = """
-    query {
-      Page(page: 1, perPage: %d) {
-        media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC) {
-          idMal
-          title { romaji english native }
-          synonyms
-          genres
-          studios { nodes { name } }
-          averageScore
-          episodes
-          source
-        }
-      }
-    }
-    """ % limit
-    data = fetch_json(ANILIST_URL, payload={"query": query}, headers={"Content-Type": "application/json"})
-    try:
-        media_list = data.get("data", {}).get("Page", {}).get("media", [])
-        normalized = []
-        for m in media_list:
-            title = m.get("title") or {}
-            normalized.append({
-                "mal_id": m.get("idMal"),
-                "title": {
-                    "english": title.get("english"),
-                    "romaji": title.get("romaji"),
-                    "native": title.get("native"),
-                },
-                "title_japanese": title.get("native"),
-                "synonyms": m.get("synonyms") or [],
-                "genres": [{"name": g} for g in (m.get("genres") or [])],
-                "studios": [{"name": (s.get("name") or "").strip()} for s in (m.get("studios", {}).get("nodes") or [])],
-                "score": (m.get("averageScore") or 0) / 10,
-                "episodes": m.get("episodes"),
-                "source": m.get("source"),
-            })
-        return normalized
-    except Exception as e:
-        print(f"❌ parse anilist fallback failed: {e}", file=sys.stderr)
-        return []
-
-
 def _normalize_candidate(text: str) -> str:
-    text = text.lower()
+    text = (text or "").lower()
     text = text.replace("μ'sic", "music").replace("μ", "u")
-    text = text.replace("'", "").replace("’", "").replace(":", " ").replace("-", " ")
-    text = text.replace("  ", " ").strip()
+    text = text.replace("'", "").replace("'", "").replace(":", " ").replace("-", " ")
+    text = text.replace("~", " ").replace("Ⅱ", " 2 ").replace("☆", " ").replace("  ", " ").strip()
     return text
 
 
-def choose_title(anime: dict) -> str:
-    mal = anime.get("mal_id")
+def _title_candidates(m):
+    """从 AniList media 提取候选标题；兼容 Jikan dict/str title"""
+    if isinstance(m, dict) and isinstance(m.get("title"), dict):
+        t = m["title"]
+        return [t.get("romaji"), t.get("english"), t.get("native"), m.get("title_japanese")]
+    if isinstance(m.get("title"), str):
+        return [m["title"], m.get("title_japanese")]
+    return [m.get("title"), m.get("title_japanese")]
+
+
+def choose_title(m) -> str:
+    mal = m.get("idMal") or m.get("mal_id")
     if mal and mal in _zh_cache:
         return _zh_cache[mal]
-
-    direct = None
-    title = anime.get("title") or {}
-    if isinstance(title, dict):
-        direct = title.get("english") or title.get("romaji") or title.get("native")
-    elif isinstance(title, str):
-        direct = title
-
-    jp = anime.get("title_japanese")
-    candidates = [c for c in [direct, jp] if c]
-
-    normalized_map = {_normalize_candidate(c): c for c in candidates}
+    candidates = [c for c in _title_candidates(m) if c]
+    norm_map = {_normalize_candidate(c): c for c in candidates}
     for key, zh in _TITLE_OVERRIDES.items():
-        norm_key = _normalize_candidate(key)
-        if norm_key in normalized_map:
+        if _normalize_candidate(key) in norm_map:
             return zh
-
     return next(iter(candidates)) or "未知作品"
+
+
+# ---------- AniList 主数据源 ----------
+_ANILIST_SEASON = """
+query ($per: Int, $season: MediaSeason, $year: Int) {
+  Page(page: 1, perPage: $per) {
+    media(type: ANIME, status: RELEASING, season: $season, seasonYear: $year, sort: [POPULARITY_DESC]) {
+      id idMal
+      title { romaji english native }
+      averageScore popularity favourites episodes
+      source status format
+      genres
+      studios { nodes { name } }
+      description(asHtml: false)
+    }
+  }
+}
+"""
+
+
+def _anilist_media(limit=20):
+    now = datetime.now(timezone(timedelta(hours=8)))
+    year = now.year
+    month = now.month
+    season = {1: "WINTER", 2: "WINTER", 3: "WINTER",
+              4: "SPRING", 5: "SPRING", 6: "SPRING",
+              7: "SUMMER", 8: "SUMMER", 9: "SUMMER",
+              10: "FALL", 11: "FALL", 12: "FALL"}.get(month, "SUMMER")
+    payload = {"query": _ANILIST_SEASON, "variables": {
+        "per": limit, "season": season, "year": year}}
+    data = _post_json(ANILIST_URL, payload)
+    try:
+        return data["data"]["Page"]["media"]
+    except Exception as e:
+        print(f"❌ anilist season parse failed: {e}", file=sys.stderr)
+        return []
+
+
+# ---------- Jikan 备用数据源 ----------
+def _jikan_media(limit=15):
+    data = _jikan_get("/seasons/now", {"limit": limit, "sfw": "true"})
+    return data if isinstance(data, list) else []
+
+
+# ---------- 数据归一化 ----------
+def _norm_score(v):
+    try:
+        return round(float(v or 0), 1)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _norm_heat(popularity, favourites):
+    """热度 = 关注度(权重) + 收藏数，归一化。无数据给 0。"""
+    pop = int(popularity or 0)
+    fav = int(favourites or 0)
+    heat = pop * 0.01 + fav * 0.5
+    return round(heat, 1)
 
 
 def build_report(date_str=None):
     if not date_str:
         date_str = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
 
-    seasonal = fetch_seasonal_now(limit=15)
-    top = fetch_top_anime(limit=20)
-    source = seasonal if seasonal else top
-    if not source:
-        print("[warn] Jikan unavailable, falling back to AniList", file=sys.stderr)
-        source = _fetch_anilist_season_now(limit=15)
-    # Dedupe by mal_id while preserving order
-    seen = set()
-    deduped = []
-    for a in source:
-        mid = a.get("mal_id")
-        if mid and mid not in seen:
-            seen.add(mid)
-            deduped.append(a)
-    source = deduped[:10]
+    # 1. 主源 AniList，备用 Jikan
+    media = _anilist_media(limit=20)
+    source_name = "AniList"
+    if not media:
+        print("[warn] AniList unavailable, fallback to Jikan", file=sys.stderr)
+        media = _jikan_media(limit=15)
+        source_name = "Jikan"
+    if not media:
+        print("⚠️ 两数据源均不可用，本次不生成", file=sys.stderr)
+        return None
 
-    mal_ids = [a.get("mal_id") for a in source if a.get("mal_id")]
-    # Disable anilist cache injection; choose_title + title_overrides.json already resolve titles.
-    # zh_map = _anilist_zh_candidates(mal_ids)
-    # _zh_cache.update(zh_map)
-
-    genres_map = {}
+    # 2. 归一化真实数据 → ranking（真实热度值，无编造）
     ranking = []
-    for idx, anime in enumerate(source[:10], 1):
-        title = choose_title(anime)
-        score = anime.get("score") or 0.0
-        genres = [g.get("name", "") for g in anime.get("genres", [])]
-        main_genre = genres[0] if genres else "综合"
+    for a in media:
+        title = a.get("title") or {}
+        if isinstance(title, dict):
+            native = title.get("native") or ""
+        else:
+            native = ""
+        genres = [g for g in (a.get("genres") or []) if g]
+        # 主制作公司（nodes[0] 即主要制作，AniList 无 isMain 时按序取首）
+        main_studio = ""
+        studios_raw = a.get("studios") or {}
+        nodes = studios_raw.get("nodes") or []
+        if nodes and isinstance(nodes[0], dict):
+            main_studio = (nodes[0].get("name") or "").strip()
+        score = _norm_score(a.get("averageScore") if a.get("averageScore") is not None else a.get("score"))
+        popularity = int(a.get("popularity") or 0)
+        favourites = int(a.get("favourites") or 0)
         ranking.append({
-            "rank": idx,
-            "title": title,
-            "genre": main_genre,
-            "score": f"评分 {score:.1f}",
+            "mal_id": a.get("idMal") or a.get("mal_id"),
+            "title": choose_title(a),
+            "raw_title": (a.get("title") or {}).get("romaji") if isinstance(a.get("title"), dict) else "",
+            "title_japanese": native,
+            "genre": (genres[0] if genres else "综合"),
+            "all_genres": genres,
+            "score": score,
+            "heat": _norm_heat(popularity, favourites),
+            "popularity": popularity,
+            "favourites": favourites,
+            "episodes": a.get("episodes"),
+            "studio": main_studio,
+            "source_media": a.get("source"),
+            "status": a.get("status"),
             "trend": "flat",
-            "recommend": "本季热门，适合按兴趣追看"
+            "recommend": "",
         })
 
-    pick = []
-    pick_titles = set()
-    for anime in source[:10]:
-        title = choose_title(anime)
-        if title in pick_titles:
-            continue
-        pick_titles.add(title)
-        score = anime.get("score") or 0.0
-        synopsis = (anime.get("synopsis") or "")[:100]
-        episodes = anime.get("episodes") or "?"
-        pick.append({
-            "title": title,
-            "status": f"更新中 · 共 {episodes} 话",
-            "stars": "★★★★★" if score >= 8.5 else ("★★★★☆" if score >= 7.5 else "★★★☆☆"),
-            "highlight": synopsis or "暂无简介",
-            "audience": (anime.get("genres") or [{}])[0].get("name") and f"喜欢 {(anime.get('genres') or [{}])[0].get('name')} 风格的观众" or "综合观众"
-        })
-        if len(pick) >= 3:
-            break
+    # 按热度降序排序
+    ranking.sort(key=lambda r: r["heat"], reverse=True)
+    for i, r in enumerate(ranking, 1):
+        r["rank"] = i
 
+    # 3. studios 列表（真实）
+    studios_seen = set()
     studios = []
-    seen = set()
-    for anime in source[:20]:
-        studio = ((anime.get("studios") or [{}])[0].get("name", "")).strip()
-        if studio and studio not in seen:
-            seen.add(studio)
-            studios.append(studio)
-        if len(studios) >= 5:
+    for r in ranking:
+        s = r["studio"]
+        if s and s not in studios_seen:
+            studios_seen.add(s)
+            studios.append(s)
+        if len(studios) >= 8:
             break
 
-    company_rows = [{"company": s, "type": "本季播出", "content": "当前季度有作品在播"} for s in studios]
-
-    news = [
-        {
-            "title": f"2026年夏季新番开播：共{len(source)}部作品列入本季榜单",
-            "tags": ["新番", "夏季档", "开播"],
-            "content": "本季涵盖多元题材，包含科幻、奇幻、运动、日常等类型。以下榜单基于本季在播作品数据生成。",
-            "impact": "夏季档进入核心播放期，建议按题材与评分优先选择追番。"
-        },
-        {
-            "title": "流媒体动漫热度继续上升",
-            "tags": ["流媒体", "数据"],
-            "content": "Netflix、Disney+ 等平台日本动漫内容持续增加，海外热度与本土口碑形成正循环。",
-            "impact": "流媒体热度可作为追番参考，关注评分与讨论度变化。"
-        },
-        {
-            "title": "剧场版与续作企划增多",
-            "tags": ["剧场版", "续作"],
-            "content": "多家工作室公布 2026-2027 年剧场版与 TV 续作计划，粉丝关注度明显提升。",
-            "impact": "建议纳入长期关注清单，跟踪制作进度与上映时间。"
-        }
-    ]
-
-    upcoming = []
-    upcoming_source = source[5:10]
-    for anime in upcoming_source:
-        title = choose_title(anime)
-        studio = ((anime.get("studios") or [{}])[0].get("name", "")).strip() or "未知"
-        source_type = anime.get("source") or "未公开"
-        upcoming.append({
-            "title": title,
-            "date": "待公开",
-            "studio": studio,
-            "source": source_type,
-            "expectation": "关注后续官方情报与预告"
-        })
-    if not upcoming:
-        upcoming.append({
-            "title": "敬请关注官方后续公开",
-            "date": "待公布",
-            "studio": "多社",
-            "source": "综合",
-            "expectation": "持续关注行业动态"
-        })
-
-    sales = []
-    if top:
-        t1 = choose_title(top[0])
-        sales.append({"category": "蓝光/影碟热度", "content": f"当前热门：{t1}", "trend": "up"})
-        sales.append({"category": "漫画原作热度", "content": "多部作品带动原作销量上升", "trend": "up"})
-    if not sales:
-        sales.append({"category": "综合热度", "content": "暂无开放数据", "trend": "flat"})
-
-    editor_choice = pick[0]["title"] if pick else "本季热门作品"
-    editor_reason = pick[0]["highlight"] if pick else "暂无可推荐内容"
-    editor_audience = pick[0]["audience"] if pick else "综合观众"
-
-    shortlist = {
-        "5": [editor_choice] if editor_choice else [],
-        "4": [p["title"] for p in pick[1:2]] if len(pick) > 1 else [],
-        "3": [p["title"] for p in pick[2:3]] if len(pick) > 2 else [],
-        "2": [],
-        "1": []
-    }
-
-    quote = {
-        "source": "今日动漫日报",
-        "character": "编辑",
-        "line": "好的动画不会剧透人心，只会让人想再看一遍。",
-        "meaning": "优秀作品的价值往往在看完之后才真正显现。"
-    }
-
-    hit = [
-        {
-            "title": ranking[-1]["title"] if ranking else "待观察",
-            "score_change": "首周关注度上升明显",
-            "reason": "低调开播但讨论度提升，口碑有反转趋势。"
-        }
-    ]
-
+    # 4. 组装报告（数字用真实，文字类由 LLM 覆盖）
     report = {
         "date": date_str,
-        "news": news,
-        "ranking": ranking,
-        "pick": pick[:3],
-        "hit": hit,
-        "company": company_rows[:8],
-        "sales": sales,
-        "upcoming": upcoming[:10],
-        "editor": {
-            "title": editor_choice,
-            "reason": editor_reason,
-            "audience": editor_audience,
-            "similar": "《进击的巨人》《间谍过家家》"
-        },
-        "quote": quote,
-        "shortlist": shortlist
+        "source": source_name,
+        "ranking": ranking[:10],
+        "all_ranking": ranking,
+        "studios": studios,
+        "genres": sorted({g for r in ranking for g in (r.get("all_genres") or [])})[:12],
     }
 
     out_dir = Path("/root/anime_daily/files") / date_str
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_file = out_dir / f"anime_data_{date_str}.json"
-    src_file = Path("/root/anime_daily/daily_news") / f"anime_data_{date_str}.json"
-    out_file.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    src_file.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"✅ 动漫日报数据已生成：{out_file}")
-    for row in report["ranking"][:10]:
-        print(row["title"])
+    src_dir = Path("/root/anime_daily/daily_news")
+    src_dir.mkdir(parents=True, exist_ok=True)
+
+    blob = json.dumps(report, ensure_ascii=False, indent=2)
+    (src_dir / f"anime_data_{date_str}.json").write_text(blob, encoding="utf-8")
+    print(f"✅ 动漫日报数据已生成: {src_dir / f'anime_data_{date_str}.json'} (来源 {source_name})")
+    for r in ranking[:10]:
+        print(f"  {r['rank']}. {r['title']} score={r['score']} heat={r['heat']}")
     return report
 
 

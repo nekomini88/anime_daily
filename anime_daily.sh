@@ -17,6 +17,10 @@ echo "📺 开始生成 ${today} 日本动漫番剧日报..."
 
 python3 scripts/anime_data_collector.py "$today"
 
+# Step 1.5: LLM 生成内容章节（news/推荐/黑马/金句等，基于真实数据）
+echo "🤖 生成 LLM 内容章节..."
+python3 generate_anime_llm.py "$today" || echo "⚠️ LLM 内容生成失败，使用兜底文字继续"
+
 # Step 2: 生成 HTML 报告
 echo "🎨 生成 HTML 报告..."
 if [[ ! -f "templates/anime_daily.html.j2" ]]; then
