@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-美股日报 HTML → Telegram 分段发送脚本
-对应原 shell: /root/us_stock_daily/send_tg_report.sh
+动漫日报 HTML → Telegram 分段发送脚本
+对应原 shell: /root/anime_daily/send_tg_report.sh
 
 支持从同目录 config.ini 读取配置，实现发送频道解耦。
 """
@@ -32,7 +32,7 @@ def html_to_tg(html: str) -> str:
     # 0) 只取 <body>，避免 <head> 里的 <title> 重复；再从正文里只保留第一个报告标题之后的内容
     m = re.search(r"<body[^>]*>(.*?)</body>", html, re.DOTALL | re.IGNORECASE)
     html = m.group(1) if m else html
-    title_mark = "📈 美股收盘日报｜2026-07-04"
+    title_mark = "日本动漫番剧日报"
     idx = html.find(title_mark)
     html = html[idx:] if idx >= 0 else html
 
@@ -66,7 +66,7 @@ def html_to_tg(html: str) -> str:
     html = re.sub(r"<[^>]+>", " ", html)
 
     # 4) 先去掉正文里所有标题行，后面再加统一 header，避免重复
-    title_variants = ["📈 美股收盘日报｜2026-07-04", "美股收盘日报｜2026-07-04"]
+    title_variants = ["📺 日本动漫番剧日报", "日本动漫番剧日报"]
     for variant in title_variants:
         html = re.sub(r"(?m)^" + re.escape(variant) + r"\s*$", "", html)
         html = re.sub(r"(?m)^\s*" + re.escape(variant) + r"\s*$", "", html)
@@ -82,8 +82,8 @@ def html_to_tg(html: str) -> str:
         html = html.replace(f"\x00TABLE{i}\x00", "\n<pre>\n" + tbl + "\n</pre>\n")
 
     # 7) 头尾包裹
-    header = "<b>📈 美股收盘日报｜2026-07-04</b>"
-    footer = "\n\n⚠️ 本报告基于市场数据自动生成，仅供参考，不构成投资建议。投资有风险，入市需谨慎。"
+    header = "<b>📺 日本动漫番剧日报</b>"
+    footer = "\n\n📢 数据源：Bangumi 番剧数据 · 榜单真实采集，仅供参考。"
     full = header + "\n\n" + html.strip() + footer
     full = re.sub(r"\n{3,}", "\n\n", full)
     return full.strip()
@@ -104,7 +104,7 @@ def split_chunks(text: str):
             split = cut.rfind("\n\n")
         if split < 400:
             split = CHUNK_LIMIT
-        prefix = "" if first else "<b>📈 美股收盘日报｜2026-07-04（续）</b>\n\n"
+        prefix = "" if first else "<b>📺 日本动漫番剧日报（续）</b>\n\n"
         chunks.append(prefix + text[pos : pos + split].strip())
         pos += split
         first = False
@@ -137,9 +137,9 @@ def main():
     chat_id = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_CHAT
 
     if not html_file:
-        # 默认路径: <script_dir>/files/<today>/美股收盘日报_<today>.html
+        # 默认路径: <script_dir>/files/<today>/动漫日报_<today>.html
         today = __import__("datetime").date.today().isoformat()
-        html_file = str(script_dir / "files" / today / f"美股收盘日报_{today}.html")
+        html_file = str(script_dir / "files" / today / f"动漫日报_{today}.html")
 
     html_path = Path(html_file)
     if not html_path.is_file():
