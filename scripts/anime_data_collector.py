@@ -16,6 +16,13 @@ from pathlib import Path
 ANILIST_URL = "https://graphql.anilist.co"
 JIKAN_BASE = "https://api.jikan.moe/v4"
 
+# ---------- 榜单构建常量 ----------
+ANILIST_LIMIT = 20
+JIKAN_LIMIT = 15
+RANKING_TOP = 10
+STUDIOS_LIMIT = 8
+GENRES_LIMIT = 12
+
 
 # ---------- 通用请求 ----------
 def _post_json(url, payload, headers=None, timeout=25):
@@ -159,67 +166,59 @@ def _norm_heat(popularity, favourites):
     return round(heat, 1)
 
 
-def build_report(date_str=None):
-    if not date_str:
-        date_str = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+def _normalize_media_entry(a):
+    """把单条 AniList/Jikan media 归一化为榜单条目（字段归一）。
 
-    # 1. 主源 AniList，备用 Jikan
-    media = _anilist_media(limit=20)
-    source_name = "AniList"
-    if not media:
-        print("[warn] AniList unavailable, fallback to Jikan", file=sys.stderr)
-        media = _jikan_media(limit=15)
-        source_name = "Jikan"
-    if not media:
-        print("⚠️ 两数据源均不可用，本次不生成", file=sys.stderr)
-        return None
+    兼容两种数据源结构：title dict/str、studios dict(nodes)/list、score 字段回退。
+    """
+    title = a.get("title") or {}
+    if isinstance(title, dict):
+        native = title.get("native") or ""
+    else:
+        native = ""
+    genres = [g for g in (a.get("genres") or []) if g]
+    # 主制作公司（AniList: nodes[0]; Jikan: 字符串数组）——兼容两种结构
+    main_studio = ""
+    studios_raw = a.get("studios")
+    if isinstance(studios_raw, dict):
+        nodes = studios_raw.get("nodes") or []
+        if nodes and isinstance(nodes[0], dict):
+            main_studio = (nodes[0].get("name") or "").strip()
+    elif isinstance(studios_raw, list) and studios_raw:
+        main_studio = str(studios_raw[0]).strip()
+    score = _norm_score(a.get("averageScore") if a.get("averageScore") is not None else a.get("score"))
+    popularity = int(a.get("popularity") or 0)
+    favourites = int(a.get("favourites") or 0)
+    return {
+        "mal_id": a.get("idMal") or a.get("mal_id"),
+        "title": choose_title(a),
+        "raw_title": (a.get("title") or {}).get("romaji") if isinstance(a.get("title"), dict) else "",
+        "title_japanese": native,
+        "genre": (genres[0] if genres else "综合"),
+        "all_genres": genres,
+        "score": score,
+        "heat": _norm_heat(popularity, favourites),
+        "popularity": popularity,
+        "favourites": favourites,
+        "episodes": a.get("episodes"),
+        "studio": main_studio,
+        "source_media": a.get("source"),
+        "status": a.get("status"),
+        "trend": "flat",
+        "recommend": "",
+    }
 
-    # 2. 归一化真实数据 → ranking（真实热度值，无编造）
-    ranking = []
-    for a in media:
-        title = a.get("title") or {}
-        if isinstance(title, dict):
-            native = title.get("native") or ""
-        else:
-            native = ""
-        genres = [g for g in (a.get("genres") or []) if g]
-        # 主制作公司（AniList: nodes[0]; Jikan: 字符串数组）——兼容两种结构
-        main_studio = ""
-        studios_raw = a.get("studios")
-        if isinstance(studios_raw, dict):
-            nodes = studios_raw.get("nodes") or []
-            if nodes and isinstance(nodes[0], dict):
-                main_studio = (nodes[0].get("name") or "").strip()
-        elif isinstance(studios_raw, list) and studios_raw:
-            main_studio = str(studios_raw[0]).strip()
-        score = _norm_score(a.get("averageScore") if a.get("averageScore") is not None else a.get("score"))
-        popularity = int(a.get("popularity") or 0)
-        favourites = int(a.get("favourites") or 0)
-        ranking.append({
-            "mal_id": a.get("idMal") or a.get("mal_id"),
-            "title": choose_title(a),
-            "raw_title": (a.get("title") or {}).get("romaji") if isinstance(a.get("title"), dict) else "",
-            "title_japanese": native,
-            "genre": (genres[0] if genres else "综合"),
-            "all_genres": genres,
-            "score": score,
-            "heat": _norm_heat(popularity, favourites),
-            "popularity": popularity,
-            "favourites": favourites,
-            "episodes": a.get("episodes"),
-            "studio": main_studio,
-            "source_media": a.get("source"),
-            "status": a.get("status"),
-            "trend": "flat",
-            "recommend": "",
-        })
 
-    # 按热度降序排序
+def _rank_ranking(ranking):
+    """按热度降序排序并分配 rank（原地修改，与旧行为一致）。"""
     ranking.sort(key=lambda r: r["heat"], reverse=True)
     for i, r in enumerate(ranking, 1):
         r["rank"] = i
+    return ranking
 
-    # 3. studios 列表（真实）
+
+def _build_studios(ranking, limit=STUDIOS_LIMIT):
+    """按榜单热度序去重提取工作室列表（保留首次出现顺序，最多 limit 个）。"""
     studios_seen = set()
     studios = []
     for r in ranking:
@@ -227,17 +226,46 @@ def build_report(date_str=None):
         if s and s not in studios_seen:
             studios_seen.add(s)
             studios.append(s)
-        if len(studios) >= 8:
+        if len(studios) >= limit:
             break
+    return studios
+
+
+def _build_genres(ranking, limit=GENRES_LIMIT):
+    """榜单全类型去重并排序，取前 limit 个。"""
+    return sorted({g for r in ranking for g in (r.get("all_genres") or [])})[:limit]
+
+
+def build_report(date_str=None):
+    if not date_str:
+        date_str = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+
+    # 1. 主源 AniList，备用 Jikan
+    media = _anilist_media(limit=ANILIST_LIMIT)
+    source_name = "AniList"
+    if not media:
+        print("[warn] AniList unavailable, fallback to Jikan", file=sys.stderr)
+        media = _jikan_media(limit=JIKAN_LIMIT)
+        source_name = "Jikan"
+    if not media:
+        print("⚠️ 两数据源均不可用，本次不生成", file=sys.stderr)
+        return None
+
+    # 2. 归一化真实数据 → ranking（真实热度值，无编造）
+    ranking = [_normalize_media_entry(a) for a in media]
+    _rank_ranking(ranking)
+
+    # 3. studios 列表（真实）——去重且按热度序
+    studios = _build_studios(ranking)
 
     # 4. 组装报告（数字用真实，文字类由 LLM 覆盖）
     report = {
         "date": date_str,
         "source": source_name,
-        "ranking": ranking[:10],
+        "ranking": ranking[:RANKING_TOP],
         "all_ranking": ranking,
         "studios": studios,
-        "genres": sorted({g for r in ranking for g in (r.get("all_genres") or [])})[:12],
+        "genres": _build_genres(ranking),
     }
 
     out_dir = Path("/root/anime_daily/files") / date_str
