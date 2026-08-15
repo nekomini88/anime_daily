@@ -24,9 +24,8 @@ class TestNormalizeCandidate:
         assert ac._normalize_candidate("A:B-C~D") == "a b c d"
 
     def test_roman_numeral_2(self):
-        # 已知缺陷：源码先 lower() 再 replace("Ⅱ")，U+2161 已被 lower 成
-        # 小写 ⅱ(U+2171)，replace 永远不命中 → 锁定当前真实输出
-        assert ac._normalize_candidate("AttackⅡ") == "attackⅱ"
+        # 修复: 先替换 Ⅱ 再 lower(), 罗马数字正确归一
+        assert ac._normalize_candidate("AttackⅡ") == "attack 2"
 
     def test_collapse_and_strip_spaces(self):
         # replace("  "," ") 只做一次：3 个连续空格只塌缩到 2 个
@@ -75,13 +74,11 @@ class TestChooseTitle:
         m = {"idMal": 10, "title": {"romaji": "Whatever"}}
         assert ac.choose_title(m) == "已缓存名"
 
-    def test_no_title_raises_stopiteration(self, monkeypatch):
-        # 已知缺陷：candidates 为空时 next(iter([])) 抛 StopIteration，
-        # 并不会走到"未知作品"兜底（未修源码，测试锁定当前行为）
+    def test_no_title_returns_unknown(self, monkeypatch):
+        # 修复: candidates 为空时返回"未知作品"兜底 (原抛 StopIteration)
         monkeypatch.setattr(ac, "_zh_cache", {})
         monkeypatch.setattr(ac, "_TITLE_OVERRIDES", {})
-        with pytest.raises(StopIteration):
-            ac.choose_title({"idMal": 1})
+        assert ac.choose_title({"idMal": 1}) == "未知作品"
 
 
 class TestNormScore:
@@ -240,6 +237,24 @@ class TestBuildReport:
         assert report["source"] == "Jikan"
         assert report["ranking"][0]["title"] == "JikanAnime"
         assert report["ranking"][0]["heat"] == 14.0  # 900*0.01 + 10*0.5
+
+    def test_jikan_studios_list_structure(self, monkeypatch, redirect_project_paths):
+        # 修复: 真 Jikan 数据 studios/genres 是 list (非 {"nodes":...}),
+        # 原来 studios_raw.get("nodes") 抛 AttributeError 崩溃, 现已兼容
+        redirect_project_paths(ac)
+        monkeypatch.setattr(ac, "_anilist_media", lambda limit=20: [])
+        monkeypatch.setattr(ac, "_jikan_media", lambda limit=15: [{
+            "id": 10, "idMal": 10, "title": {"romaji": "JikanListAnime", "english": None,
+                                           "native": "リスト"},
+            "averageScore": 70, "popularity": 500, "favourites": 5, "episodes": 24,
+            "source": "MANGA", "status": "RELEASING", "format": "TV",
+            "genres": ["Action", "Drama"], "studios": ["Studio List"]}])
+
+        report = ac.build_report("2026-07-03")
+
+        assert report["source"] == "Jikan"
+        assert report["ranking"][0]["studio"] == "Studio List"
+        assert report["ranking"][0]["genre"] == "Action"
 
     def test_both_sources_empty_returns_none(self, monkeypatch, redirect_project_paths):
         redirect_project_paths(ac)

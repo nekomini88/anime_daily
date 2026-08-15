@@ -67,10 +67,13 @@ _TITLE_OVERRIDES = load_title_overrides()
 
 
 def _normalize_candidate(text: str) -> str:
-    text = (text or "").lower()
+    text = (text or "")
+    # 先替换罗马数字/特殊字符 (lower() 会把 Ⅱ 变成 ⅱ 导致替换失效)
+    text = text.replace("Ⅱ", " 2 ").replace("☆", " ")
+    text = text.lower()
     text = text.replace("μ'sic", "music").replace("μ", "u")
     text = text.replace("'", "").replace("'", "").replace(":", " ").replace("-", " ")
-    text = text.replace("~", " ").replace("Ⅱ", " 2 ").replace("☆", " ").replace("  ", " ").strip()
+    text = text.replace("~", " ").replace("  ", " ").strip()
     return text
 
 
@@ -89,11 +92,13 @@ def choose_title(m) -> str:
     if mal and mal in _zh_cache:
         return _zh_cache[mal]
     candidates = [c for c in _title_candidates(m) if c]
+    if not candidates:
+        return "未知作品"
     norm_map = {_normalize_candidate(c): c for c in candidates}
     for key, zh in _TITLE_OVERRIDES.items():
         if _normalize_candidate(key) in norm_map:
             return zh
-    return next(iter(candidates)) or "未知作品"
+    return candidates[0]
 
 
 # ---------- AniList 主数据源 ----------
@@ -178,12 +183,15 @@ def build_report(date_str=None):
         else:
             native = ""
         genres = [g for g in (a.get("genres") or []) if g]
-        # 主制作公司（nodes[0] 即主要制作，AniList 无 isMain 时按序取首）
+        # 主制作公司（AniList: nodes[0]; Jikan: 字符串数组）——兼容两种结构
         main_studio = ""
-        studios_raw = a.get("studios") or {}
-        nodes = studios_raw.get("nodes") or []
-        if nodes and isinstance(nodes[0], dict):
-            main_studio = (nodes[0].get("name") or "").strip()
+        studios_raw = a.get("studios")
+        if isinstance(studios_raw, dict):
+            nodes = studios_raw.get("nodes") or []
+            if nodes and isinstance(nodes[0], dict):
+                main_studio = (nodes[0].get("name") or "").strip()
+        elif isinstance(studios_raw, list) and studios_raw:
+            main_studio = str(studios_raw[0]).strip()
         score = _norm_score(a.get("averageScore") if a.get("averageScore") is not None else a.get("score"))
         popularity = int(a.get("popularity") or 0)
         favourites = int(a.get("favourites") or 0)
